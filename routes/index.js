@@ -38,6 +38,11 @@ module.exports = function (app, router) {
     })(req, res, next);
   });
 
+  //OPTIONS
+  app.options(baseRoute + '/sign-up', function(req, res) {
+    res.json(200, 'OK');
+  })
+
   // login attempts
   app.post(baseRoute + '/login', function(req, res, next) {
     passport.authenticate('local-login', function(err, user, info) {
@@ -63,6 +68,11 @@ module.exports = function (app, router) {
       });
     })(req, res, next);
   });
+
+  //OPTIONS
+  app.options(baseRoute + '/login', function(req, res) {
+    res.json(200, 'OK');
+  })
 
   // handle logout
   app.get(baseRoute + '/logout', function(req, res) {
