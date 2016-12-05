@@ -78,7 +78,7 @@ module.exports = function (app, router) {
   app.get(baseRoute + '/logout', function(req, res) {
       req.logout();
       res.status(200);
-      res.json('OK');
+      res.json({'message': 'Logout success!', 'data': []});
   });
 
   // otherwise
