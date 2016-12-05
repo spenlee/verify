@@ -40,7 +40,7 @@ module.exports = function (app, router) {
 
   //OPTIONS
   app.options(baseRoute + '/sign-up', function(req, res) {
-    res.json(200, 'OK');
+    res.status(200).json({'message': 'OK', 'data': []});
   })
 
   // login attempts
@@ -71,7 +71,7 @@ module.exports = function (app, router) {
 
   //OPTIONS
   app.options(baseRoute + '/login', function(req, res) {
-    res.json(200, 'OK');
+    res.status(200).json({'message': 'OK', 'data': []});
   })
 
   // handle logout
