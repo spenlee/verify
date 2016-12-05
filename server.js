@@ -3,11 +3,17 @@ var express = require('express');
 var router = express.Router();
 var bodyParser = require('body-parser');
 var secrets = require('./config/secrets');
+var passport = require('passport');
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 // connect mongoose here to be used throughout
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 mongoose.connect(secrets.mongo_connection);
+
+// pass passport for configuration
+require('./config/passport')(passport);
 
 // Create our Express application
 var app = express();
@@ -30,6 +36,13 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use(bodyParser.json());
+
+app.use(cookieParser());
+
+// passport
+//app.use(session({'secret': 'secret', 'resave': false, 'saveUninitialized': false}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Use routes as a module (see index.js)
 require('./routes')(app, router);
