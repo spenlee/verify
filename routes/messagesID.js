@@ -29,13 +29,18 @@ module.exports = function(router) {
   var messagesIDroute = router.route('/messages/:id');
 
   messagesIDroute.get(function(req, res, next) {
-  	Messages.findOne({'_id': req.params.id}).exec()
+  	Message.findOne({'_id': req.params.id}).exec()
   		.then(function(result) {
-  			res.status(result.status);
-  			res.json(result.body);
+  			if (result === null) {
+  				throw 'Message not found';
+  			}
+  			res.status(200).json({'message': 'OK GET', 'data': result});
   		})
   		.catch(function(err) {
-  			next(err);
+  			var responseObj = new constants['responseObject']();
+			responseObj.status = constants.user.notFound.status;
+			responseObj.body.message = constants.user.notFound.message;
+			next(responseObj);
   		});
   });
 
@@ -91,21 +96,30 @@ module.exports = function(router) {
   // });
 
   messagesIDroute.delete(function(req, res, next) {
-  		Message.findOneAndRemove({'_id': req.params.id}).exec()
+		Message.findOneAndRemove({'_id': req.params.id}).exec()
 			.then(function(result) {
 				if (!result) {
 					throw 'Message not found';
 				}
 				else {
-					res.status(200).json({'message': 'OK Message delete', 'data': []});
+					res.status(200).json({'message': 'OK Message deleted', 'data': []});
 				}
 			})
 			.catch(function(err) {
+				var responseObj = new constants['responseObject']();
 				responseObj.status = constants.user.notFound.status;
 				responseObj.body.message = constants.user.notFound.message;
 				next(responseObj);
 			});
   });
 
+  messagesIDroute.options(function(req, res) {
+      res.status(constants.user.validOptions.status);
+      res.json({
+      	'message': constants.user.validOptions.message,
+      	'data': constants.user.validOptions.options
+      });
+  });
+  
   return router;
 }

@@ -11,6 +11,7 @@ module.exports = function (app, router) {
   app.use(baseRoute, require('./users.js')(router));
   app.use(baseRoute, require('./usersID.js')(router));
   app.use(baseRoute, require('./messages.js')(router));
+  app.use(baseRoute, require('./messagesID.js')(router));
   //app.use(baseRoute, require('./login.js')(router));
 
   // sign-up attempts
