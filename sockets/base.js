@@ -21,7 +21,7 @@ module.exports = function(sockjs, server) {
 	  }
 	}
 
-	echo.installHandlers(server, {prefix:'/api/messages'});
+	echo.installHandlers(server, {prefix:'/api/web-socket'});
 }
 
 

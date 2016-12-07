@@ -12,6 +12,9 @@ module.exports = {
         'invalidEmailDuplicate': {'status': 500, 'message': 'This email already exists'},
         'notFound': {'status': 404, 'message': 'User not found'}
     },
+    'message': {
+        'validGET': {'status': 200, 'message': 'OK'}
+    },
     '200': {'status': 200, 'message': 'OK'},
     '404': {'status': 404, 'message': 'Not Found'},
     'errorObjectIdCastError': {'status': 500, 'message': 'ObjectId CastError'},
