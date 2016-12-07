@@ -15,6 +15,7 @@
     "express-session": "^1.14.2",
     "mongoose": "*",
     "passport": "^0.3.2",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "sockjs": "^0.3.18"
   }
 }
