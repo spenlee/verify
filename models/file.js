@@ -1,12 +1,12 @@
-// // Load required packages
-// var mongoose = require('mongoose');
+// Load required packages
+var mongoose = require('mongoose');
 
-// // Define schema
-// var MessageSchema = new mongoose.Schema({
-//   'content': {'type': String, 'default': ''},
-//   'email': {'type': String, 'default': ''},
-//   'dateCreated': {'type': Date, 'default': Date.now}
-// });
+// Define schema
+var FileSchema = new mongoose.Schema({
+  'name': {'type': String, 'default': ''},
+  'content': {'type': String, 'default': ''},
+  'dateCreated': {'type': Date, 'default': Date.now}
+});
 
-// // Export the Mongoose model
-// module.exports = mongoose.model('Message', MessageSchema);
+// Export the Mongoose model
+module.exports = mongoose.model('File', FileSchema);

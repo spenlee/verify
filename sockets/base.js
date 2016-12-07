@@ -7,6 +7,8 @@ module.exports = function(sockjs, server) {
 		console.log("CLIENT CONNECTED");
 
 		conn.on('data', function(message) {
+			console.log(typeof message);
+			console.log(message);
 			broadcast(message);
 		});
 
