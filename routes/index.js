@@ -10,11 +10,8 @@ var statusInvalidRoute = 404;
 module.exports = function (app, router) {
   app.use(baseRoute, require('./users.js')(router));
   app.use(baseRoute, require('./usersID.js')(router));
-  app.use(baseRoute, require('./messages.js')(router));
-  app.use(baseRoute, require('./messagesID.js')(router));
-  app.use(baseRoute, require('./files.js')(router));
-  app.use(baseRoute, require('./filesID.js')(router));
-  //app.use(baseRoute, require('./login.js')(router));
+  app.use(baseRoute, require('./events.js')(router));
+  app.use(baseRoute, require('./hits.js')(router));
 
   // sign-up attempts
   app.post(baseRoute + '/sign-up', function(req, res, next) {
@@ -87,15 +84,15 @@ module.exports = function (app, router) {
 
   // otherwise
   app.use(function(req, res) {
-  	res.status(statusInvalidRoute);
-  	res.json({ 
-  		'message': 'Nothing here. Go to /users to play with the API.',
-  		'data': []
-  	});
+    res.status(statusInvalidRoute);
+    res.json({ 
+      'message': 'Nothing here. Go to /users to play with the API.',
+      'data': []
+    });
   });
   // error handling
   app.use(baseRoute, function(err, req, res, next) {
-  	res.status(err.status);
-  	res.json(err.body);
+    res.status(err.status);
+    res.json(err.body);
   });
 };
