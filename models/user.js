@@ -5,7 +5,7 @@ var bcrypt = require('bcrypt-nodejs');
 // Lean HIT reference object
 var HIT = mongoose.Schema({
   'timestamp': Date,
-  'HITID': Number
+  'HITID': String
 },{ _id : false });
 
 // Define our user schema

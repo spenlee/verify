@@ -11,4 +11,4 @@ var TweetSchema = new mongoose.Schema({
 });
 
 // Export the Mongoose model
-module.exports = mongoose.model('File', TweetSchema);
+module.exports = mongoose.model('Tweet', TweetSchema);

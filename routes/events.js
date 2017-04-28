@@ -1,3 +1,5 @@
+var async = require('async');
+
 var Event = require('../models/event');
 var Tweet = require('../models/tweet');
 var HIT = require('../models/hit');
@@ -83,79 +85,6 @@ module.exports = function(router) {
     return false;
   };
 
-  function saveEvent(event, responseObj, res, next) {
-    event.save()
-      .then(function(result) {
-        res.status(constants.OK.status);
-        responseObj.body.data.event = result;
-        var ev = responseObj.body.data.event; // Event
-        var tw = responseObj.body.data.tweet; // Tweet
-        // create a HIT, add HIT ID to every user's currentEvents
-        // other properties, default values
-        var hit = new HIT({
-          'eventID': ev._id,
-          'tweetID': tw._id,
-          'dateCreated': ev.lastModified,
-          'lastModified': ev.lastModified
-        });
-        // save HIT
-        hit.save()
-          .then(function(result) {
-            responseObj.body.data.HIT = result; // add HIT to result
-          // add to users
-            var query = User.find();
-            // actually execute - mongoose
-            query.exec()
-            // success for finding users
-              .then(function(result) {
-                
-                var h = responseObj.body.data.HIT;
-                // update every User -- add HIT tuple
-                result.forEach(function(user) {
-                  var updatedUser = user;
-                  updatedUser.currentEvents.push({
-                    'HITID': h._id,
-                    'timestamp': h.dateCreated
-                  });
-                  // save each user
-                  updatedUser.save()
-                    // .then(function(result) {
-                    // })
-                    .catch(function(err) {
-                      responseObj.status = constants.Error.status;
-                      responseObj.body.data = [];
-                      responseObj.body.message = 'Saving User Error ' + err;
-                      next(responseObj);
-                    });
-                });
-
-                // forEach complete, send full response
-                res.status(constants.OK.status);
-                res.json(responseObj.data);
-              })
-              .catch(function(err) {
-                responseObj.status = constants.Error.status;
-                responseObj.body.data = [];
-                responseObj.body.message = 'Finding Users Error ' + err;
-                next(responseObj);
-              });
-          })
-          .catch(function(err) {
-            responseObj.status = constants.Error.status;
-            responseObj.body.data = [];
-            responseObj.body.message = 'Saving HIT Error ' + err;
-            next(responseObj);
-          });
-
-      })
-      .catch(function(err) {
-        responseObj.status = constants.Error.status;
-        responseObj.body.data = [];
-        responseObj.body.message = 'Saving Event Error ' + err;
-        next(responseObj);
-      });
-  };
-
   /*
   POST EVENT TO SERVER
   with Tweet
@@ -163,65 +92,212 @@ module.exports = function(router) {
   */
   router.route('/new-event').post(function(req, res, next) {
     var responseObj = new constants['responseObject']();
+
     // check fields
     if (!isValidEvent(req.body) || !isValidTweet(req.body)) {
       responseObj.status = constants.Error.status;
       responseObj.body.message = constants.Error.message;
+      responseObj.body.data = {
+        "eventID": "required",
+        "keywords":["required", "..."],
+        "eventTimestamp": "required",
+        "id_str": "required",
+        "text": "required",
+        "created_at": "required"
+      };
       next(responseObj);
     }
     else {
-      var tweet = new Tweet({
-        'id_str': req.body.id_str,
-        'text': req.body.text,
-        'image': req.body.image,
-        'timestamp': req.body.created_at
-      });
+      // Series of operations to execute
+      // functions with callbacks
+      responseObj.body.data = {};
+      responseObj.body.message = {};
 
-      // check request body -- do validation checks with mongoose
-      tweet.save()
-        .then(function(result) {
+      async.waterfall([
+        async.apply(createTweet, responseObj, req),
+        findEvent,
+        saveEvent,
+        createHIT,
+        findUsers,
+        updateUsers
+      ], function (err, result) {
+        // callbacks that return with err accumulate here
+        if (err !== null) {
+          next(err); // err is responseObj
+        }
+        // result accumulated here on success
+        else {
           res.status(constants.OK.status);
-          responseObj.body.data = {};
-          responseObj.body.data.tweet = result; // add tweet to response
-          var newTweet = result;
+          result.body.message = constants.OK.message;
+          res.send(result.body);
+        }
+      }); // end of waterfall
 
-          // check existing Event, append tweet to existing event
-          var eventID = req.body.eventID;
-          Event.findOne({'_id': eventID}).exec()
-            .then(function(result) {
-              if (result === null) {
-                throw 'Event not found';
-              }
-              // Event already exists
-              result.tweets.push(newTweet._id); // add generated tweet id to event
-              result.keywords = req.body.keywords;
-              result.lastModified = req.body.eventTimestamp;
-              // save the event
-              saveEvent(result, responseObj, res, next);
-            })
-            .catch(function(err) {
-              // Event not found, create a new Event
-              // create event, add tweet id
-              event = new Event({
-                '_id': req.body.eventID,
-                'tweets': [newTweet._id], // initialize tweets with tweet id
-                'keywords': req.body.keywords,
-                'dateCreated': req.body.eventTimestamp,
-                'lastModified': req.body.eventTimestamp
-              });
+    }
+  });
 
-              saveEvent(event, responseObj, res, next);
-            });
+  /*
+  NEW EVENT NAMED FUNCTIONS
+  */
+  function createTweet(responseObj, req, callback) {
+    // Initialize new Tweet based on request
+    var tweet = new Tweet({
+      'id_str': req.body.id_str,
+      'text': req.body.text,
+      'image': req.body.image,
+      'timestamp': req.body.created_at
+    });
 
+    // save the Tweet
+    tweet.save()
+      // Tweet success
+      .then(function(result) {
+        responseObj.body.data.tweet = result; // add tweet to response
+        // pass responseObj and Tweet
+        callback(null, responseObj, req, result);
+      })
+      // Tweet error
+      .catch(function(err) {
+        responseObj.status = constants.Error.status;
+        responseObj.body.message.tweet = err;
+        callback(responseObj);
+      });
+  };
+
+  function findEvent(responseObj, req, tweet, callback) {
+    // use req body based information
+    Event.findOne({'_id': req.body.eventID}).exec()
+      // check if Event already exists or create a new one
+      .then(function(result) {
+        if (result === null) {
+          throw 'Event not found';
+        }
+        var event = result;
+        // Event already exists - add Tweet information to Event
+        event.tweets.push(tweet._id); // add generated tweet id to event
+        event.keywords = req.body.keywords;
+        event.lastModified = req.body.eventTimestamp;
+        // move to saving the event
+        callback(null, responseObj, event);
+      })
+      .catch(function(err) {
+        // Event not found, create a new Event
+        // create event, add tweet id
+        var event = new Event({
+          '_id': req.body.eventID,
+          'tweets': [tweet._id], // initialize tweets with tweet id
+          'keywords': req.body.keywords,
+          'dateCreated': req.body.eventTimestamp,
+          'lastModified': req.body.eventTimestamp // new event, last mod is now
+        });
+        // move to saving the event
+        callback(null, responseObj, event);
+      });
+  };
+
+  function saveEvent(responseObj, event, callback) {
+    // save the event created previously
+    event.save()
+      .then(function(result) {
+        var event = result;
+        responseObj.body.data.event = event;
+        // move to creating HIT
+        callback(null, responseObj, event);
+      })
+      .catch(function(err) {
+        responseObj.status = constants.Error.status;
+        responseObj.body.message.event = err;
+        callback(responseObj);
+      });
+  };
+
+  function createHIT(responseObj, event, callback) {
+    // tweet id is the last tweet id added to event.tweets
+    var tweetID = event.tweets[event.tweets.length - 1] // 0 index
+    // Initialize new HIT based on event
+    var HITTask = new HIT({ // cannot name var HIT, name collision
+      'eventID': event._id,
+      'tweetID': tweetID,
+      'dateCreated': event.lastModified,
+      'lastModified': event.lastModified // init HIT, no responses yet
+      // other fields default
+    });
+
+    // save the HIT
+    HITTask.save()
+      // HIT success
+      .then(function(result) {
+        responseObj.body.data.HIT = result; // add HIT to response
+        
+        var HITTuple = {
+          'HITID': result._id,
+          'timestamp': result.dateCreated
+        };
+        // pass responseObj and HIT tuple to be added to users
+        callback(null, responseObj, HITTuple);
+      })
+      // HIT error
+      .catch(function(err) {
+        responseObj.status = constants.Error.status;
+        responseObj.body.message.HIT = err;
+        callback(responseObj);
+      });
+  };
+
+  function findUsers(responseObj, HITTuple, callback) {
+    // Get all Users
+    var query = User.find();
+    query.exec()
+      // success for finding users
+      .then(function(result) {
+        var users = result;
+        // update every User -- add HIT tuple
+        users.forEach(function(user) {
+          var updatedUser = user;
+          updatedUser.currentEvents.push(HITTuple);
+        });
+        callback(null, responseObj, users);
+      })
+      // Finding Users error
+      .catch(function(err) {
+        responseObj.status = constants.Error.status;
+        responseObj.body.message.users = err;
+        callback(responseObj);
+      });
+  };
+
+  function updateUsers(responseObj, users, callback) {
+    // create an array of async format functions to be called to save users in parallel
+    var functList = [];
+    users.forEach(function(user) {
+      functList.push(updateUser(user));
+    });
+
+    async.parallel(functList, // functions to run, that will each update a user
+      function(err, results) { // overall callback
+        if (err) {
+          responseObj.status = constants.Error.status;
+          responseObj.body.message.user = err; // add user err info
+          callback(responseObj); // error object back to waterfall
+        }
+        else {
+          callback(null, responseObj); // overall success
+        }
+      });
+  };
+
+  function updateUser(user) {
+    return function(callback) {
+      // return a function that saves one user
+      user.save()
+        .then(function(result) {
+          callback(null); // no error, save success
         })
         .catch(function(err) {
-          responseObj.status = constants.Error.status;
-          responseObj.body.data = [];
-          responseObj.body.message = 'Saving Tweet Error';
-          next(responseObj);
+          callback(err); // return error
         });
-    } // END OF ELSE
-  });
+    };
+  };
 
   /*
   POST REQUEST - new event

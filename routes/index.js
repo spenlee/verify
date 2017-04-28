@@ -12,6 +12,7 @@ module.exports = function (app, router) {
   app.use(baseRoute, require('./usersID.js')(router));
   app.use(baseRoute, require('./events.js')(router));
   app.use(baseRoute, require('./hits.js')(router));
+  app.use(baseRoute, require('./tweets.js')(router));
 
   // sign-up attempts
   app.post(baseRoute + '/sign-up', function(req, res, next) {
