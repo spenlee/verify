@@ -316,6 +316,20 @@ module.exports = function(router) {
     }
   };
 
+  /*
+  Drop all responses
+  DELETE to /api/responses
+  Params: none
+  */
+  responsesRoute.delete(function(req, res, next) {
+    Response.collection.drop();
+    var responseObj = new constants['responseObject']();
+    responseObj.status = constants.Dropped.status;
+    responseObj.body.message = constants.Dropped.message;
+    res.status(responseObj.status);
+    res.send(responseObj.body);
+  });
+
   //OPTIONS for angular
   responsesRoute.options(function(req, res) {
       res.status(constants.OK.status);

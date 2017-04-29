@@ -187,5 +187,11 @@ module.exports = function(router) {
     };
   };
 
+  /*
+  Drop all users
+  DELETE to /api/users
+  Params: none
+  */
+
   return router;
 }

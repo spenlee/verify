@@ -35,51 +35,18 @@ module.exports = function(router) {
   });
 
   /*
-  POST REQUEST - new user
+  Drop all hits
+  DELETE to /api/hits
+  Params: none
   */
-  // HITsRoute.post(function(req, res, next) {
-  //   var responseObj = new constants['responseObject']();
-
-  //   responseObj.body.data = new User({
-  //     'name': req.body.name,
-  //     'email': req.body.email
-  //   });
-
-  //   // check request body -- do validation checks with mongoose
-  //   responseObj.body.data.save()
-  //     .then(function(result) {
-  //       res.status(constants.OK.status);
-  //       responseObj.body.message = constants.OK.message;
-  //       responseObj.body.data = result;
-  //       res.json(responseObj.body);
-  //     })
-  //     .catch(function(err) {
-  //       responseObj.status = constants.Error.status;
-  //       responseObj.body.data = [];
-  //       responseObj.body.message = [constants.Error.message];
-        
-  //       if (err.errors) {
-  //         // check name -- required
-  //         if (err.errors.name) {
-  //           responseObj.body.message.push(constants.nameRequired.message);
-  //         }
-  //         // check email -- required
-  //         if (err.errors.email) {
-  //           responseObj.body.message.push(constants.emailRequired.message);
-  //         }
-  //       }
-  //       else {
-  //         // check email -- duplicate
-  //         // { ..."errmsg": "E11000 duplicate key error index: mp4.users.$email_1 dup key: { : \"1\" }",...
-  //         if (err['errmsg']) {
-  //           responseObj.body.message = [constants.duplicateEmail.message];
-  //         }
-  //       }
-        
-  //       responseObj.body.message = responseObj.body.message.join(' ');
-  //       next(responseObj);
-  //     });
-  // });
+  HITsRoute.delete(function(req, res, next) {
+    HIT.collection.drop();
+    var responseObj = new constants['responseObject']();
+    responseObj.status = constants.Dropped.status;
+    responseObj.body.message = constants.Dropped.message;
+    res.status(responseObj.status);
+    res.send(responseObj.body);
+  });
 
   //OPTIONS for angular
   HITsRoute.options(function(req, res) {

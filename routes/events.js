@@ -292,52 +292,19 @@ module.exports = function(router) {
   };
 
   /*
-  POST REQUEST - new event
+  Drop all events
+  DELETE to /api/events
+  Params: none
   */
-  // eventsRoute.post(function(req, res, next) {
-  //   var responseObj = new constants['responseObject']();
-
-  //   responseObj.body.data = new User({
-  //     'name': req.body.name,
-  //     'email': req.body.email
-  //   });
-
-  //   // check request body -- do validation checks with mongoose
-  //   responseObj.body.data.save()
-  //     .then(function(result) {
-  //       res.status(constants.OK.status);
-  //       responseObj.body.message = constants.OK.message;
-  //       responseObj.body.data = result;
-  //       res.json(responseObj.body);
-  //     })
-  //     .catch(function(err) {
-  //       responseObj.status = constants.Error.status;
-  //       responseObj.body.data = [];
-  //       responseObj.body.message = [constants.Error.message];
-        
-  //       if (err.errors) {
-  //         // check name -- required
-  //         if (err.errors.name) {
-  //           responseObj.body.message.push(constants.nameRequired.message);
-  //         }
-  //         // check email -- required
-  //         if (err.errors.email) {
-  //           responseObj.body.message.push(constants.emailRequired.message);
-  //         }
-  //       }
-  //       else {
-  //         // check email -- duplicate
-  //         // { ..."errmsg": "E11000 duplicate key error index: mp4.users.$email_1 dup key: { : \"1\" }",...
-  //         if (err['errmsg']) {
-  //           responseObj.body.message = [constants.duplicateEmail.message];
-  //         }
-  //       }
-        
-  //       responseObj.body.message = responseObj.body.message.join(' ');
-  //       next(responseObj);
-  //     });
-  // });
-
+  eventsRoute.delete(function(req, res, next) {
+    Event.collection.drop();
+    var responseObj = new constants['responseObject']();
+    responseObj.status = constants.Dropped.status;
+    responseObj.body.message = constants.Dropped.message;
+    res.status(responseObj.status);
+    res.send(responseObj.body);
+  });
+  
   //OPTIONS for angular
   eventsRoute.options(function(req, res) {
       res.status(constants.OK.status);

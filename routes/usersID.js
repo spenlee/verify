@@ -522,6 +522,10 @@ module.exports = function(router) {
       });
   });
 
+
+  /*
+  Delete specific user with id
+  */
   usersIDRoute.delete(function(req, res, next) {
     var responseObj = new constants['responseObject']();
       User.findOneAndRemove({'_id': req.params.id}).exec()

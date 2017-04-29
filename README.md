@@ -34,8 +34,9 @@ $ node server.js
 
 open API:
 
-###Event
-Adding an Event for all Users
+#### Event
+
+##### Adding an Event for all Users
 POST to /api/events
 ```
 {
@@ -49,19 +50,29 @@ POST to /api/events
 }
 ```
 
-###User
-Clear all events for all users
+#### User
+
+##### Create a new user
+POST to /api/users/sign-up
+```
+{
+  "email": String, // required
+  "password": String // required
+}
+```
+
+##### Clear all events for all users
 PUT to /api/users/clear-events
 
-Refresh Events for a User with id
+##### Refresh Events for a User with id
 PUT to /api/users/:id/refresh-events
 Params: id: user id
 
-Get all of a user's current events
+##### Get all of a user's current events
 GET to /api/users/:id/events/:current
 Params: id: user id, current: Boolean - true (current)/false (past)
 Response:
-If current is true:
+###### If current is true:
 ```
 {
   "message": String, (OK on Success)
@@ -82,7 +93,7 @@ If current is true:
   ]
 }
 ```
-If current is false:
+###### If current is false:
 ```
 {
   "message": String, (OK on Success)
@@ -120,12 +131,13 @@ If current is false:
 }
 ```
 
-Clear all events for a user
+##### Clear all events for a user
 PUT to /api/users/:id/clear-events
 Params: id: user id
 
-###Response
-Send a new response
+#### Response
+
+##### Send a new response
 POST to /api/responses
 ```
 {
@@ -137,4 +149,33 @@ POST to /api/responses
 }
 ```
 
+#### GET
 
+##### Get All Events
+GET to /api/events
+
+##### Get All HITs
+GET to /api/hits
+
+##### Get All Tweets
+GET to /api/tweets
+
+##### Get All Responses
+GET to /api/responses
+
+##### Get All Users
+GET to /api/users
+
+#### DELETE
+
+##### Delete Events Collection
+DELETE to /api/events
+
+##### Delete HITs Collection
+DELETE to /api/hits
+
+##### Delete Tweets Collection
+DELETE to /api/tweets
+
+##### Delete Responses Collection
+DELETE to /api/responses

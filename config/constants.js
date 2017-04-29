@@ -35,6 +35,10 @@ module.exports = {
     'status': 200,
     'message': 'OK'
   },
+  'Dropped' : {
+    'status': 200,
+    'message': 'Collection Dropped'
+  },
   'Error': {
     'status': 400,
     'message': 'Error'
