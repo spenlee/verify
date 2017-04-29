@@ -64,9 +64,9 @@ module.exports = function(router) {
 
   TWEET
   -----
-  id_str
-  text
-  created_at
+  tweetID
+  tweetText
+  tweetTimestamp
   */
   function isValidEvent(body) {
     if (constants.isValid(body.eventID)
@@ -77,9 +77,9 @@ module.exports = function(router) {
     return false;
   };
   function isValidTweet(body) {
-    if (constants.isValid(body.id_str)
-        && constants.isValid(body.text)
-        && constants.isValid(body.created_at)) {
+    if (constants.isValid(body.tweetID)
+        && constants.isValid(body.tweetText)
+        && constants.isValid(body.tweetTimestamp)) {
       return true;
     }
     return false;
@@ -101,9 +101,10 @@ module.exports = function(router) {
         "eventID": "required",
         "keywords":["required", "..."],
         "eventTimestamp": "required",
-        "id_str": "required",
-        "text": "required",
-        "created_at": "required"
+        "tweetID": "required",
+        "tweetText": "required",
+        "tweetImage": "not required",
+        "tweetTimestamp": "required"
       };
       next(responseObj);
     }
@@ -142,10 +143,10 @@ module.exports = function(router) {
   function createTweet(responseObj, req, callback) {
     // Initialize new Tweet based on request
     var tweet = new Tweet({
-      'id_str': req.body.id_str,
-      'text': req.body.text,
-      'image': req.body.image,
-      'timestamp': req.body.created_at
+      'id_str': req.body.tweetID,
+      'text': req.body.tweetText,
+      'image': req.body.tweetImage,
+      'timestamp': req.body.tweetTimestamp
     });
 
     // save the Tweet
@@ -216,7 +217,7 @@ module.exports = function(router) {
     var tweetID = event.tweets[event.tweets.length - 1] // 0 index
     // Initialize new HIT based on event
     var HITTask = new HIT({ // cannot name var HIT, name collision
-      'eventID': event._id,
+      'keywords': event.keywords,
       'tweetID': tweetID,
       'dateCreated': event.lastModified,
       'lastModified': event.lastModified // init HIT, no responses yet
@@ -253,8 +254,7 @@ module.exports = function(router) {
         var users = result;
         // update every User -- add HIT tuple
         users.forEach(function(user) {
-          var updatedUser = user;
-          updatedUser.currentEvents.push(HITTuple);
+          user.currentEvents.push(HITTuple);
         });
         callback(null, responseObj, users);
       })

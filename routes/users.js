@@ -1,3 +1,5 @@
+var async = require('async');
+
 var User = require('../models/user');
 var constants = require('../config/constants');
 
@@ -100,6 +102,88 @@ module.exports = function(router) {
         'data': []
       });
   });
+
+  /*
+  CLEAR ALL USERS EVENTS - CURRENT AND PAST
+  */
+  router.route('/users/clear-events').put(function(req, res, next) {
+    var responseObj = new constants['responseObject']();
+    // Series of operations to execute
+    // functions with callbacks
+    async.waterfall([
+      async.apply(findUsers, responseObj),
+      saveUsers
+    ], function (err, result) {
+      // callbacks that return with err accumulate here
+      if (err !== null) {
+        next(err); // err is responseObj
+      }
+      // result accumulated here on success
+      else {
+        res.status(constants.OK.status);
+        result.body.message = constants.OK.message;
+        res.send(result.body);
+      }
+    }); // end of waterfall
+  });
+
+  /*
+  HELPER FUNCT CLEAR USERS
+  */
+  function findUsers(responseObj, callback) {
+    // Get all Users
+    var query = User.find();
+    query.exec()
+      // success for finding users
+      .then(function(result) {
+        var users = result;
+        // update every User -- add HIT tuple
+        users.forEach(function(user) {
+          user.currentEvents = [];
+          user.pastEvents = [];
+        });
+        callback(null, responseObj, users);
+      })
+      // Finding Users error
+      .catch(function(err) {
+        responseObj.status = constants.Error.status;
+        responseObj.body.message = err;
+        callback(responseObj);
+      });
+  };
+
+  function saveUsers(responseObj, users, callback) {
+    // create an array of async format functions to be called to save users in parallel
+    var functList = [];
+    users.forEach(function(user) {
+      functList.push(updateUser(user));
+    });
+
+    async.parallel(functList, // functions to run, that will each update a user
+      function(err, results) { // overall callback
+        if (err) {
+          responseObj.status = constants.Error.status;
+          responseObj.body.message.user = err; // add user err info
+          callback(responseObj); // error object back to waterfall
+        }
+        else {
+          callback(null, responseObj); // overall success
+        }
+      });
+  };
+
+  function updateUser(user) {
+    return function(callback) {
+      // return a function that saves one user
+      user.save()
+        .then(function(result) {
+          callback(null); // no error, save success
+        })
+        .catch(function(err) {
+          callback(err); // return error
+        });
+    };
+  };
 
   return router;
 }

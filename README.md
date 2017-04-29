@@ -33,3 +33,17 @@ $ npm install
 $ node server.js
 
 open API:
+
+Adding an Event for all Users
+POST to /api/new-event
+"""
+{
+  "eventID": String,
+  "keywords":[String],
+  "eventTimestamp": Date,
+  "tweetID": String,
+  "tweetText": String,
+  "tweetImage": String, // Not Required
+  "tweetTimestamp": Date
+}
+"""

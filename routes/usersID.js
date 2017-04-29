@@ -105,6 +105,37 @@ module.exports = function(router) {
       });
   });
 
+  /*
+  CLEAR ALL USER EVENTS - CURRENT AND PAST
+  */
+  router.route('/users/:id/clear-events').put(function(req, res, next) {
+    var responseObj = new constants['responseObject']();
+    // get user with ID
+    getUser(req.params.id)
+      .then(function(result) {
+        responseObj.body.data = result.body.data; // get current user
+        // clear current and past events
+        responseObj.body.data.currentEvents = [];
+        responseObj.body.data.pastEvents = [];
+
+        // check request body -- do validation checks with mongoose
+        responseObj.body.data.save()
+          .then(function(result) {
+            res.status(constants.OK.status);
+            responseObj.body.message = constants.OK.message;
+            res.json(responseObj.body);
+          })
+          .catch(function(err) {
+            responseObj.status = constants.Error.status;
+            responseObj.body.message = 'User Clear Events Error';
+            next(responseObj);
+          });
+      })
+      .catch(function(err) { // getUser err
+        next(err);
+      });
+  });
+
   usersIDRoute.delete(function(req, res, next) {
     var responseObj = new constants['responseObject']();
       User.findOneAndRemove({'_id': req.params.id}).exec()

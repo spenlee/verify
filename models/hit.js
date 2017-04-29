@@ -4,7 +4,8 @@ var mongoose = require('mongoose');
 // Define schema
 var HITSchema = new mongoose.Schema({
   // '_id': {'type': String, 'default': ''}, // auto generated HIT id
-  'eventID': {'type': String},
+  // 'eventID': {'type': String},
+  'keywords': [String],
   'tweetID': {'type': String},
   'current': {'type': Boolean, 'default': true}, // current or past
   'responses': [String],
