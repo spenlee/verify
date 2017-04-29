@@ -34,9 +34,9 @@ $ node server.js
 
 open API:
 
-###EVENT
+###Event
 Adding an Event for all Users
-POST to /api/new-event
+POST to /api/events
 ```
 {
   "eventID": String,
@@ -49,7 +49,7 @@ POST to /api/new-event
 }
 ```
 
-###USER
+###User
 Clear all events for all users
 PUT to /api/users/clear-events
 
@@ -60,11 +60,45 @@ Params: id: user id
 Get all of a user's current events
 GET to /api/users/:id/events/:current
 Params: id: user id, current: Boolean - true (current)/false (past)
+Response:
+```
+{
+  "message": String, (OK on Success)
+  "data": [
+    {
+      "_id": String, // HIT ID
+      "keywords": [ // HIT keywords
+        String
+      ],
+      "tweetID": String,
+      "lastModified": Date,
+      "tweet": {
+        "_id": String,
+        "id_str": String,
+        "text": String,
+        "__v": 0,
+        "timestamp": Date
+      }
+    }
+  ]
+}
+```
 
 Clear all events for a user
 PUT to /api/users/:id/clear-events
 Params: id: user id
 
-
+###Response
+Send a new response
+POST to /api/responses
+```
+{
+  "answer": Number, // 0: Yes, 1: No, 2: Uncertain
+  "source": Number, // 0: Source1, 1: Source2, 2: SourceOther
+  "citation": String, // Not Required
+  "userID": String,
+  "HITID": String
+}
+```
 
 

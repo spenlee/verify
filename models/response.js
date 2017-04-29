@@ -13,4 +13,4 @@ var ResponseSchema = new mongoose.Schema({
 });
 
 // Export the Mongoose model
-module.exports = mongoose.model('File', ResponseSchema);
+module.exports = mongoose.model('Response', ResponseSchema);

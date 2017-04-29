@@ -13,6 +13,7 @@ module.exports = function (app, router) {
   app.use(baseRoute, require('./events.js')(router));
   app.use(baseRoute, require('./hits.js')(router));
   app.use(baseRoute, require('./tweets.js')(router));
+  app.use(baseRoute, require('./responses.js')(router));
 
   // sign-up attempts
   app.post(baseRoute + '/sign-up', function(req, res, next) {
@@ -86,9 +87,21 @@ module.exports = function (app, router) {
   // otherwise
   app.use(function(req, res) {
     res.status(statusInvalidRoute);
-    res.json({ 
-      'message': 'Nothing here. Go to /users to play with the API.',
-      'data': []
+    res.json({
+      'base': '/api',
+      'message': 'Nothing here. Use base and routes listed in data.',
+      'data': {
+        'users': ['/users',
+                  '/users/:id/clear-events',
+                  '/users/clear-events',
+                  '/users/:id/refresh-events', 
+                  '/users/:id/events/:current' 
+                  ],
+        'events': ['/events'],
+        'HITs': ['/hits'],
+        'responses': ['/responses'],
+        'tweets': ['/tweets'],
+      }
     });
   });
   // error handling

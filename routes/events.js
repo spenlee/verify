@@ -71,7 +71,7 @@ module.exports = function(router) {
   };
 
   /* Adding an Event for all Users
-  POST to /api/new-event
+  POST to /api/events
   {
     "eventID": String,
     "keywords":[String],
@@ -82,7 +82,7 @@ module.exports = function(router) {
     "tweetTimestamp": Date
   }
   */
-  router.route('/new-event').post(function(req, res, next) {
+  eventsRoute.post(function(req, res, next) {
     var responseObj = new constants['responseObject']();
 
     // check fields
