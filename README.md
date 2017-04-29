@@ -27,10 +27,14 @@ config/ contains constants and login code
 1) install node
 2) install npm
 3) Install dependencies from package.json
+```
 $ npm install
+```
 4) create config/secrets.js and export a module with mongo_connection defined
 5) Run the server
+```
 $ node server.js
+```
 
 # open API:
 
@@ -38,6 +42,8 @@ $ node server.js
 
 ### Adding an Event for all Users
 POST to /api/events
+
+Request body input should include:
 ```
 {
   "eventID": String,
@@ -54,6 +60,8 @@ POST to /api/events
 
 ### Create a new user
 POST to /api/users/sign-up
+
+Request body input should include:
 ```
 {
   "email": String, // required
@@ -66,12 +74,15 @@ PUT to /api/users/clear-events
 
 ### Refresh Events for a User with id
 PUT to /api/users/:id/refresh-events
-Params: id: user id
+
+URL Params: id: user id
 
 ### Get all of a user's current events
 GET to /api/users/:id/events/:current
-Params: id: user id, current: Boolean - true (current)/false (past)
-Response:
+
+URL Params: id: user id, current: Boolean - true (current)/false (past)
+
+Response from server:
 #### If current is true:
 ```
 {
@@ -133,12 +144,15 @@ Response:
 
 ### Clear all events for a user
 PUT to /api/users/:id/clear-events
-Params: id: user id
+
+URL Params: id: user id
 
 ## Response
 
 ### Send a new response
 POST to /api/responses
+
+Request body input should include:
 ```
 {
   "answer": Number, // 0: Yes, 1: No, 2: Uncertain
