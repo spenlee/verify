@@ -61,23 +61,59 @@ Get all of a user's current events
 GET to /api/users/:id/events/:current
 Params: id: user id, current: Boolean - true (current)/false (past)
 Response:
+If current is true:
 ```
 {
   "message": String, (OK on Success)
   "data": [
     {
-      "_id": String, // HIT ID
-      "keywords": [ // HIT keywords
-        String
-      ],
+      "HITID": String,
+      "HITKeywords": [String],
       "tweetID": String,
-      "lastModified": Date,
+      "eventTimestamp": Date,
+      "current": Boolean,
       "tweet": {
-        "_id": String,
         "id_str": String,
         "text": String,
-        "__v": 0,
+        "image": String,
         "timestamp": Date
+      }
+    }
+  ]
+}
+```
+If current is false:
+```
+{
+  "message": String, (OK on Success)
+  "data": [
+    {
+      "HITID": String,
+      "HITKeywords": [String],
+      "tweetID": String,
+      "eventTimestamp": Date,
+      "current": Boolean,
+      "tweet": {
+        "id_str": String,
+        "text": String,
+        "image": String,
+        "timestamp": Date
+      },
+      "numYes": Number,
+      "numNo": Number,
+      "numUncertain": Number,
+      "numSource1": Number,
+      "numSource2": Number,
+      "numSourceOther": Number,
+      "citationsYes": [String],
+      "citationsNo": [String],
+      "citationsUncertain": [String],
+      "response": {
+        "responseID": String,
+        "answer": Number,
+        "source": Number,
+        "dateCreated": Date,
+        "citation": String
       }
     }
   ]

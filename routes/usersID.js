@@ -300,8 +300,38 @@ module.exports = function(router) {
           callback(err);
         }
         else {
-          var FullHIT = result;
-          HITCollection.push(FullHIT);
+          // Client-side API
+          var UIEvent = {};
+          UIEvent.HITID = result._id;
+          UIEvent.HITKeywords = result.keywords;
+          UIEvent.tweetID = result.tweetID;
+          UIEvent.eventTimestamp = result.lastModified;
+          UIEvent.current = result.current;
+          UIEvent.tweet = {};
+          UIEvent.tweet.id_str = result.tweet.id_str;
+          UIEvent.tweet.text = result.tweet.text;
+          UIEvent.tweet.image = result.tweet.image ? result.tweet.image : '';
+          UIEvent.tweet.timestamp = result.tweet.timestamp;
+          if (current === false) {
+            UIEvent.numYes = result.numYes;
+            UIEvent.numNo = result.numNo;
+            UIEvent.numUncertain = result.numUncertain;
+            UIEvent.numSource1 = result.numSource1;
+            UIEvent.numSource2 = result.numSource2;
+            UIEvent.numSourceOther = result.numSourceOther;
+            UIEvent.citationsYes = result.citationsYes;
+            UIEvent.citationsNo = result.citationsNo;
+            UIEvent.citationsUncertain = result.citationsUncertain;
+            if (result.response) {
+              UIEvent.response = {};
+              UIEvent.response.responseID = result.response._id;
+              UIEvent.response.answer = result.response.answer;
+              UIEvent.response.source = result.response.source;
+              UIEvent.response.dateCreated = result.response.dateCreated;
+              UIEvent.response.citation = result.response.citation;
+            }
+          }
+          HITCollection.push(UIEvent);
           callback(null);
         }
       });
@@ -370,7 +400,8 @@ module.exports = function(router) {
     if (current === false) {
       // find response id in responses
       var responseTuple = _.find(HITTask.responses, function(resTuple) {
-        return resTuple.userID === userID;
+        // userID is an object for some reason
+        return resTuple.userID == userID;
       });
 
       // check exists -- could be a task user didn't respond to
