@@ -1,4 +1,4 @@
-Verify, the Crowdsourced Verification Network
+# Verify, the Crowdsourced Verification Network
 
 Note: config/secrets.js is a .gitignored file because it contains database related user and password information.
 To connect your own database, create a mongodb instance (perhaps use mLab, hosted mongodb instances) and add
@@ -15,7 +15,7 @@ module.exports = {
 };
 ```
 
-Project structure:
+## Project structure:
 models/ contains data models
 server.js contains server setup information
 package.json contains node dependency information
@@ -23,7 +23,7 @@ sockets/ contains socket code
 routes/ contains routing code
 config/ contains constants and login code
 
-Installation:
+## Installation:
 1) install node
 2) install npm
 3) Install dependencies from package.json
@@ -32,11 +32,11 @@ $ npm install
 5) Run the server
 $ node server.js
 
-open API:
+# open API:
 
-#### Event
+## Event
 
-##### Adding an Event for all Users
+### Adding an Event for all Users
 POST to /api/events
 ```
 {
@@ -50,9 +50,9 @@ POST to /api/events
 }
 ```
 
-#### User
+## User
 
-##### Create a new user
+### Create a new user
 POST to /api/users/sign-up
 ```
 {
@@ -61,18 +61,18 @@ POST to /api/users/sign-up
 }
 ```
 
-##### Clear all events for all users
+### Clear all events for all users
 PUT to /api/users/clear-events
 
-##### Refresh Events for a User with id
+### Refresh Events for a User with id
 PUT to /api/users/:id/refresh-events
 Params: id: user id
 
-##### Get all of a user's current events
+### Get all of a user's current events
 GET to /api/users/:id/events/:current
 Params: id: user id, current: Boolean - true (current)/false (past)
 Response:
-###### If current is true:
+#### If current is true:
 ```
 {
   "message": String, (OK on Success)
@@ -93,7 +93,7 @@ Response:
   ]
 }
 ```
-###### If current is false:
+#### If current is false:
 ```
 {
   "message": String, (OK on Success)
@@ -131,13 +131,13 @@ Response:
 }
 ```
 
-##### Clear all events for a user
+### Clear all events for a user
 PUT to /api/users/:id/clear-events
 Params: id: user id
 
-#### Response
+## Response
 
-##### Send a new response
+### Send a new response
 POST to /api/responses
 ```
 {
@@ -149,33 +149,33 @@ POST to /api/responses
 }
 ```
 
-#### GET
+## GET
 
-##### Get All Events
+### Get All Events
 GET to /api/events
 
-##### Get All HITs
+### Get All HITs
 GET to /api/hits
 
-##### Get All Tweets
+### Get All Tweets
 GET to /api/tweets
 
-##### Get All Responses
+### Get All Responses
 GET to /api/responses
 
-##### Get All Users
+### Get All Users
 GET to /api/users
 
-#### DELETE
+## DELETE
 
-##### Delete Events Collection
+### Delete Events Collection
 DELETE to /api/events
 
-##### Delete HITs Collection
+### Delete HITs Collection
 DELETE to /api/hits
 
-##### Delete Tweets Collection
+### Delete Tweets Collection
 DELETE to /api/tweets
 
-##### Delete Responses Collection
+### Delete Responses Collection
 DELETE to /api/responses
