@@ -1,6 +1,12 @@
 // Load required packages
 var mongoose = require('mongoose');
 
+// Lean Respose reference object
+var Response = mongoose.Schema({
+  'userID': String,
+  'responseID': String
+},{ _id : false });
+
 // Define schema
 var HITSchema = new mongoose.Schema({
   // '_id': {'type': String, 'default': ''}, // auto generated HIT id
@@ -8,7 +14,7 @@ var HITSchema = new mongoose.Schema({
   'keywords': [String],
   'tweetID': {'type': String},
   'current': {'type': Boolean, 'default': true}, // current or past
-  'responses': [String],
+  'responses': [Response], // Response id tuple
   'numYes': {'type': Number, 'default': 0},
   'numNo': {'type': Number, 'default': 0},
   'numUncertain': {'type': Number, 'default': 0},

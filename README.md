@@ -36,7 +36,7 @@ open API:
 
 Adding an Event for all Users
 POST to /api/new-event
-"""
+```
 {
   "eventID": String,
   "keywords":[String],
@@ -46,4 +46,4 @@ POST to /api/new-event
   "tweetImage": String, // Not Required
   "tweetTimestamp": Date
 }
-"""
+```

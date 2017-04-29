@@ -1,4 +1,10 @@
+var _ = require('lodash');
+var async = require('async');
+
 var User = require('../models/user');
+var HIT = require('../models/hit');
+var Tweet = require('../models/tweet');
+var Response = require('../models/response');
 var constants = require('../config/constants');
 
 var mongoose = require('mongoose');
@@ -46,6 +52,348 @@ module.exports = function(router) {
         next(err);
       });
   });
+
+  /*
+  REFRESH EVENTS FOR USER
+  */
+  router.route('/users/:id/refresh-events').put(function(req, res, next) {
+    var responseObj = new constants['responseObject']();
+    responseObj.body.data = {};
+    responseObj.body.message = {};
+    // Series of operations to execute
+    // functions with callbacks
+    async.waterfall([
+      async.apply(findUser, responseObj, req.params.id),
+      refreshUserEvents,
+      updateHITs
+    ], function (err, result) {
+      // callbacks that return with err accumulate here
+      if (err !== null) {
+        next(err); // err is responseObj
+      }
+      else {
+        // result accumulated here on success
+        res.status(result.status);
+        res.send(result.body);
+      }
+    }); // end of waterfall
+  });
+
+  /*
+  HELPER FUNCT TO REFRESH EVENTS
+  */
+  function findUser(responseObj, userID, callback) {
+    User.findOne({'_id': userID}).exec()
+      .then(function(result) {
+        if (result === null) {
+          throw 'User not found';
+        }
+        var user = result;
+        callback(null, responseObj, user);
+      })
+      .catch(function(err) {
+        console.log(err);
+        responseObj.status = constants.NotFound.status;
+        responseObj.body.message.user = err;
+        callback(responseObj);
+      });
+  };
+
+  function refreshUserEvents(responseObj, user, callback) {
+    // current time to compare with event timestamps
+    var currentTime = new Date();
+    var hourPast = currentTime;
+    hourPast.setHours(hourPast.getHours() - 1); // hour before
+    // only move current to past for now
+    // do not remove past for now
+    // TODO::remove past times - 6 hours past
+    var collectPast = _.remove(user.currentEvents, function(event) {
+      // move events more than an hour earlier to pastEvents
+      if (event.timestamp < hourPast) {
+        user.pastEvents.push({
+          'HITID': event.HITID,
+          'timestamp': event.timestamp
+        });
+        return true; // remove obj by returning true
+      }
+      return false;
+    });
+
+    if (collectPast.length > 0) {
+      // user.currentEvents is modified by remove
+      // mark as modified, or else will not update - applies to Arrays and array values
+      user.markModified('currentEvents');
+      // save user
+      user.save()
+        .then(function(result) {
+          responseObj.body.data.user = result; // append user to res
+          callback(null, responseObj, collectPast); // no error, save success
+        })
+        .catch(function(err) {
+          // console.log(err)
+          responseObj.status = constants.Error.status;
+          responseObj.body.message = constants.Error.message;
+          responseObj.body.data = err;
+          callback(responseObj); // return error
+        });
+    }
+    else {
+      // no modifications made, no changes to user
+      responseObj.body.data.user = user;
+      callback(null, responseObj, []); // no error, save success
+    }
+  };
+
+  function updateHITs(responseObj, pastHITTuples, callback) {
+    if (pastHITTuples.length > 0) {
+      // create an array of async format functions to be called
+      var functList = [];
+      pastHITTuples.forEach(function(HITTuple) {
+        functList.push(updatePastHIT(responseObj, HITTuple.HITID));
+      });
+
+      async.parallel(functList, // functions to run, that will each update a user
+        function(err, result) { // overall callback
+          if (err) {
+            console.log(err);
+            responseObj.status = constants.Error.status;
+            responseObj.body.message.user = err; // add user err info
+            callback(responseObj); // error object back to waterfall
+          }
+          else {
+            responseObj.status = constants.OK.status;
+            responseObj.body.message = constants.OK.message;
+            callback(null, responseObj);
+          }
+        });
+    }
+    else {
+      // no modifications needed
+      responseObj.status = constants.OK.status;
+      responseObj.body.message = constants.OK.message;
+      callback(null, responseObj); // no error, save success
+    }
+  };
+
+  function updatePastHIT(responseObj, HITID) {
+    // return an async format function that can be used by async parallel
+    return function(callback) {
+      // series access HIT, then Tweet
+      async.waterfall([
+        async.apply(getHIT, responseObj, HITID, false), // current = false to get full HIT
+        async.apply(setHIT, false), // set HIT to past, current = false
+        saveHIT
+      ], function(err, result) {
+        if (err) {
+          console.log(err);
+          callback(err);
+        }
+        else {
+          callback(null);          
+        }
+      });
+    };
+  };
+
+  function setHIT(current, responseObj, HITTask, callback) {
+    HITTask.current = current;
+    callback(null, responseObj, HITTask);
+  };
+
+  function saveHIT(responseObj, HITTask, callback) {
+    HITTask.save()
+      .then(function(result) {
+        callback(null); // no error, save success
+      })
+      .catch(function(err) {
+        console.log(err);
+        callback(err); // return error
+      });
+  };
+
+  /*
+  GET ALL USER CURRENT EVENTS
+  */
+  router.route('/users/:id/events/:current').get(function(req, res, next) {
+    var responseObj = new constants['responseObject']();
+    // check user id parameter validity
+    if (!constants.isValid(req.params.id) || req.params.current != "true" && req.params.current != "false") {
+      responseObj.status = constants.Error.status;
+      responseObj.body.message = {
+        'id:':"User id is required",
+        'current': "true or false"
+      }
+      next(responseObj);
+    }
+    else {
+      // convert to Boolean
+      req.params.current = req.params.current == "true" ? true : false;
+      responseObj.body.data = {};
+      responseObj.body.message = {};
+      // Series of operations to execute
+      // functions with callbacks
+      async.waterfall([
+        async.apply(findUser, responseObj, req.params.id),
+        async.apply(getHITs, req.params.current) // as first parameter
+      ], function (err, result) {
+        // callbacks that return with err accumulate here
+        if (err !== null) {
+          next(err); // err is responseObj
+        }
+        else {
+          // result accumulated here on success
+          res.status(result.status);
+          res.send(result.body);
+        }
+      }); // end of waterfall
+    }
+  });
+
+  /*
+  HELPER FUNCT GET ALL USER CURRENT EVENTS
+  */
+  function getHITs(current, responseObj, user, callback) {
+    // get current or past based on current flag
+    var HITTuples = current === true ? user.currentEvents : user.pastEvents;
+    // loop HITTuples, append info to common array
+    // create an array of async format functions to be called to save users in parallel
+    var functList = [];
+    var HITCollection = [];
+    HITTuples.forEach(function(HITTuple) {
+      functList.push(getFullHIT(responseObj, HITTuple.HITID, current, user._id, HITCollection));
+    });
+
+    async.parallel(functList, // functions to run, that will each update a user
+      function(err, result) { // overall callback
+        if (err) {
+          console.log(err);
+          responseObj.status = constants.Error.status;
+          responseObj.body.message.user = err; // add user err info
+          callback(responseObj); // error object back to waterfall
+        }
+        else {
+          // all HITs returned with success
+          // HITCollection is filled
+          responseObj.status = constants.OK.status;
+          responseObj.body.data = HITCollection;
+          responseObj.body.message = constants.OK.message;
+          callback(null, responseObj);
+        }
+      });
+  };
+
+  function getFullHIT(responseObj, HITID, current, userID, HITCollection) {
+    // return an async format function that can be used by async parallel
+    return function(callback) {
+      // series access HIT, then Tweet
+      async.waterfall([
+        async.apply(getHIT, responseObj, HITID, current),
+        getTweet,
+        async.apply(getResponse, current, userID)
+      ], function(err, result) {
+        if (err) {
+          console.log(err);
+          callback(err);
+        }
+        else {
+          var FullHIT = result;
+          HITCollection.push(FullHIT);
+          callback(null);
+        }
+      });
+    };
+  };
+
+  function getHIT(responseObj, HITID, current, callback) {
+    HIT.findOne({'_id': HITID}).exec()
+      .then(function(result) {
+        if (result === null) {
+          throw 'HIT not found';
+        }
+
+        var HITTask = {};
+        HITTask._id = result._id;
+        HITTask.keywords = result.keywords;
+        HITTask.tweetID = result.tweetID;
+        HITTask.lastModified = result.lastModified;
+        if (current === false) { // get more stats info
+          // need to do a copy, something weird here - result is a mongodb doc
+          // HITTask = result; // responses, numYes, citations, ...
+          HITTask.current = result.current;
+          HITTask.responses = result.responses;
+          HITTask.numYes = result.numYes;
+          HITTask.numNo = result.numNo;
+          HITTask.numUncertain = result.numUncertain;
+          HITTask.numSource1 = result.numSource1;
+          HITTask.numSource2 = result.numSource2;
+          HITTask.numSourceOther = result.numSourceOther;
+          HITTask.citationsYes = result.citationsYes;
+          HITTask.citationsNo = result.citationsNo;
+          HITTask.citationsUncertain = result.citationsUncertain;
+          HITTask.dateCreated = result.dateCreated;
+        }
+        callback(null, responseObj, HITTask);
+      })
+      .catch(function(err) {
+        console.log(err);
+        responseObj.status = constants.Error.status;
+        responseObj.body.data.HIT = err;
+        callback(responseObj);
+      });
+  };
+
+  function getTweet(responseObj, HITTask, callback) {
+    // get Tweet by id
+    Tweet.findOne({'_id': HITTask.tweetID}).exec()
+      .then(function(result) {
+        if (result === null) {
+          throw 'Tweet not found';
+        }
+
+        HITTask.tweet = result;
+        callback(null, responseObj, HITTask);
+      })
+      .catch(function(err) {
+        console.log(err);
+        responseObj.status = constants.Error.status;
+        responseObj.body.data.tweet = err;
+        callback(responseObj);
+      });
+  };
+
+  function getResponse(current, userID, responseObj, HITTask, callback) {
+    // get Response if past event, not current
+    if (current === false) {
+      // find response id in responses
+      var responseTuple = _.find(HITTask.responses, function(resTuple) {
+        return resTuple.userID === userID;
+      });
+
+      // check exists -- could be a task user didn't respond to
+      if (responseTuple) {
+        Response.findOne({'_id': responseTuple.responseID}).exec()
+          .then(function(result) {
+            if (result === null) {
+              throw 'Response not found';
+            }
+            HITTask.response = result;
+            callback(null, HITTask);
+          })
+          .catch(function(err) {
+            // console.log(err);
+            responseObj.status = constants.Error.status;
+            responseObj.body.data.response = err;
+            callback(responseObj);
+          });
+      }
+      else { // response for user doesn't exist
+        callback(null, HITTask);
+      }
+    }
+    else { // looking for current event, not past
+      callback(null, HITTask); // success, return full HIT
+    }
+  };
 
   /*
   PUT to update USER properties - name, email, events
@@ -126,6 +474,7 @@ module.exports = function(router) {
             res.json(responseObj.body);
           })
           .catch(function(err) {
+            console.log(err);
             responseObj.status = constants.Error.status;
             responseObj.body.message = 'User Clear Events Error';
             next(responseObj);
