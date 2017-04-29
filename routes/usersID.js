@@ -54,7 +54,9 @@ module.exports = function(router) {
   });
 
   /*
-  REFRESH EVENTS FOR USER
+  Refresh Events for a User with id
+  PUT to /api/users/:id/refresh-events
+  Params: id: user id
   */
   router.route('/users/:id/refresh-events').put(function(req, res, next) {
     var responseObj = new constants['responseObject']();
@@ -212,7 +214,9 @@ module.exports = function(router) {
   };
 
   /*
-  GET ALL USER CURRENT EVENTS
+  Get all of a user's current events
+  GET to /api/users/:id/events/:current
+  Params: id: user id, current: Boolean - true (current)/false (past)
   */
   router.route('/users/:id/events/:current').get(function(req, res, next) {
     var responseObj = new constants['responseObject']();
@@ -454,7 +458,9 @@ module.exports = function(router) {
   });
 
   /*
-  CLEAR ALL USER EVENTS - CURRENT AND PAST
+  Clear all events for a user
+  PUT to /api/users/:id/clear-events
+  Params: id: user id
   */
   router.route('/users/:id/clear-events').put(function(req, res, next) {
     var responseObj = new constants['responseObject']();

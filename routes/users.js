@@ -104,7 +104,9 @@ module.exports = function(router) {
   });
 
   /*
-  CLEAR ALL USERS EVENTS - CURRENT AND PAST
+  Clear all events for all users
+  PUT to /api/users/clear-events
+  Params: none
   */
   router.route('/users/clear-events').put(function(req, res, next) {
     var responseObj = new constants['responseObject']();

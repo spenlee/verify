@@ -34,6 +34,7 @@ $ node server.js
 
 open API:
 
+###EVENT
 Adding an Event for all Users
 POST to /api/new-event
 ```
@@ -47,3 +48,23 @@ POST to /api/new-event
   "tweetTimestamp": Date
 }
 ```
+
+###USER
+Clear all events for all users
+PUT to /api/users/clear-events
+
+Refresh Events for a User with id
+PUT to /api/users/:id/refresh-events
+Params: id: user id
+
+Get all of a user's current events
+GET to /api/users/:id/events/:current
+Params: id: user id, current: Boolean - true (current)/false (past)
+
+Clear all events for a user
+PUT to /api/users/:id/clear-events
+Params: id: user id
+
+
+
+

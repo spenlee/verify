@@ -53,21 +53,6 @@ module.exports = function(router) {
   /*
   helper to initially check valid fields
   */
-  /*
-  Needed:
-
-  EVENT
-  -----
-  eventID
-  keywords[]
-  eventTimestamp
-
-  TWEET
-  -----
-  tweetID
-  tweetText
-  tweetTimestamp
-  */
   function isValidEvent(body) {
     if (constants.isValid(body.eventID)
         && constants.isValid(body.keywords)
@@ -85,10 +70,17 @@ module.exports = function(router) {
     return false;
   };
 
-  /*
-  POST EVENT TO SERVER
-  with Tweet
-  add to users
+  /* Adding an Event for all Users
+  POST to /api/new-event
+  {
+    "eventID": String,
+    "keywords":[String],
+    "eventTimestamp": Date,
+    "tweetID": String,
+    "tweetText": String,
+    "tweetImage": String, // Not Required
+    "tweetTimestamp": Date
+  }
   */
   router.route('/new-event').post(function(req, res, next) {
     var responseObj = new constants['responseObject']();
