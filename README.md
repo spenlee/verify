@@ -36,7 +36,7 @@ $ npm install
 $ node server.js
 ```
 
-# open API:
+# Server API:
 
 ## Event
 

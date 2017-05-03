@@ -27,7 +27,7 @@ var port = process.env.PORT || 3000;
 //Allow CORS so that backend and frontend could pe put on different servers
 var allowCrossDomain = function(req, res, next) {
   // CREDENTIALS AND SPECIFIED ORIGINS.
-  var allowedOrigins = ['http://localhost:8080', 'http://fa16-cs498rk-088.cs.illinois.edu:8080'];
+  var allowedOrigins = ['http://localhost:8080', 'http://162.243.78.205:8080'];
   // res.header("Access-Control-Allow-Origin", "http://localhost:8080");
   var origin = req.headers.origin;
   if(allowedOrigins.indexOf(origin) > -1){
