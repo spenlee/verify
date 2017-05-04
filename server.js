@@ -96,7 +96,7 @@ echo.installHandlers(server, {prefix:'/api/web-socket'});
 function socketRoute() {
   app.post('/api/notify', function(req, res, next) {
     broadcast(JSON.stringify(req.body));
-    console.log(req.body);
+    // console.log(req.body);
     res.status(200).send(req.body);
   });
 };
