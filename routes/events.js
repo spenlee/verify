@@ -117,7 +117,7 @@ return false;
         .then(function(result) {
           if (result !== undefined) {
             // duplicate
-            responseObj.status = constants.Error.status;
+            responseObj.status = constants.OK.status;
             responseObj.body.message.tweet = 'Tweet already exists';
             next(responseObj);
           }
