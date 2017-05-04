@@ -13,6 +13,7 @@ module.exports = function (app, router) {
   app.use(baseRoute, require('./events.js')(router));
   app.use(baseRoute, require('./eventsID.js')(router));
   app.use(baseRoute, require('./hits.js')(router));
+  app.use(baseRoute, require('./hitsID.js')(router));
   app.use(baseRoute, require('./tweets.js')(router));
   app.use(baseRoute, require('./responses.js')(router));
 
