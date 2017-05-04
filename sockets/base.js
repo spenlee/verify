@@ -1,10 +1,13 @@
 module.exports = function(sockjs, server) {
+	console.log(sockjs);
+	console.log(server);
 	var clients = {};
 
 	var echo = sockjs.createServer();
 	echo.on('connection', function(conn) {
 		clients[conn.id] = conn;
-		console.log("CLIENT CONNECTED");
+		console.log(conn.id, " connected");
+		console.log(conn);
 
 		conn.on('data', function(message) {
 			broadcast(message);
@@ -23,5 +26,3 @@ module.exports = function(sockjs, server) {
 
 	echo.installHandlers(server, {prefix:'/api/web-socket'});
 }
-
-

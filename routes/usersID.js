@@ -547,5 +547,16 @@ module.exports = function(router) {
         });
   });
 
+  /*
+  Options
+  */
+  usersIDRoute.options(function(req, res) {
+      res.status(constants.OK.status);
+      res.json({
+        'message': constants.OK.message,
+        'data': []
+      });
+  });  
+
   return router;
 }

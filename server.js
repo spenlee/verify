@@ -55,6 +55,8 @@ app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
+socketRoute();
+
 // Use routes as a module (see index.js)
 require('./routes')(app, router);
 
@@ -63,4 +65,39 @@ require('./routes')(app, router);
 server.listen(port, '0.0.0.0');
 console.log('Server running on port ' + port);
 
-require('./sockets/base')(sockjs, server);
+// require('./sockets/base')(sockjs, server);
+
+// websocket(sockjs, server);
+var clients = {};
+
+var echo = sockjs.createServer();
+echo.on('connection', function(conn) {
+  clients[conn.id] = conn;
+  console.log(conn.id, " connected");
+  // console.log(conn);
+
+  conn.on('data', function(message) {
+    broadcast(message);
+  });
+
+  conn.on('close', function() {
+    delete clients[conn.id];
+  });
+});
+
+function broadcast(message) {
+  for (var client in clients) {
+    clients[client].write(message);
+  }
+}
+
+echo.installHandlers(server, {prefix:'/api/web-socket'});
+
+function socketRoute() {
+  app.post('/api/notify', function(req, res, next) {
+    broadcast(JSON.stringify(req.body));
+    console.log(req.body);
+    res.status(200).send(req.body);
+  });
+};
+

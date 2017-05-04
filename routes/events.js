@@ -1,4 +1,6 @@
+var _ = require('lodash');
 var async = require('async');
+var request = require('request');
 
 var Event = require('../models/event');
 var Tweet = require('../models/tweet');
@@ -7,6 +9,9 @@ var User = require('../models/user');
 var constants = require('../config/constants');
 
 var mongoose = require('mongoose');
+
+var SERVER = "http://localhost:3000";
+var NOTIFY = "/api/notify"
 
 module.exports = function(router) {
 
@@ -24,15 +29,15 @@ module.exports = function(router) {
     // actually execute - mongoose
     query.exec()
     // success
-      .then(function(result) {
-        res.status(constants.OK.status);
-        responseObj.body.message = constants.OK.message;
-        responseObj.body.data = result;
-        res.json(responseObj.body);
-      })
+    .then(function(result) {
+      res.status(constants.OK.status);
+      responseObj.body.message = constants.OK.message;
+      responseObj.body.data = result;
+      res.json(responseObj.body);
+    })
     // error
-      .catch(function(err) {
-        responseObj.body.message = [];
+    .catch(function(err) {
+      responseObj.body.message = [];
         // ObjectId CastError
         if (err.name === 'CastError' && err.kind === 'ObjectId') {
           responseObj.status = constants.ObjectIdCastError.status;
@@ -55,20 +60,20 @@ module.exports = function(router) {
   */
   function isValidEvent(body) {
     if (constants.isValid(body.eventID)
-        && constants.isValid(body.keywords)
-        && constants.isValid(body.eventTimestamp)) {
+      && constants.isValid(body.keywords)
+      && constants.isValid(body.eventTimestamp)) {
       return true;
-    }
-    return false;
-  };
-  function isValidTweet(body) {
-    if (constants.isValid(body.tweetID)
-        && constants.isValid(body.tweetText)
-        && constants.isValid(body.tweetTimestamp)) {
-      return true;
-    }
-    return false;
-  };
+  }
+  return false;
+};
+function isValidTweet(body) {
+  if (constants.isValid(body.tweetID)
+    && constants.isValid(body.tweetText)
+    && constants.isValid(body.tweetTimestamp)) {
+    return true;
+}
+return false;
+};
 
   /* Adding an Event for all Users
   POST to /api/events
@@ -106,26 +111,45 @@ module.exports = function(router) {
       responseObj.body.data = {};
       responseObj.body.message = {};
 
-      async.waterfall([
-        async.apply(createTweet, responseObj, req),
-        findEvent,
-        saveEvent,
-        createHIT,
-        findUsers,
-        updateUsers
-      ], function (err, result) {
-        // callbacks that return with err accumulate here
-        if (err !== null) {
-          next(err); // err is responseObj
-        }
-        // result accumulated here on success
-        else {
-          res.status(constants.OK.status);
-          result.body.message = constants.OK.message;
-          res.send(result.body);
-        }
-      }); // end of waterfall
-
+      // check duplicate tweet text
+      var tweetText = req.body.tweetText;
+      checkTweets(tweetText)
+        .then(function(result) {
+          if (result !== undefined) {
+            // duplicate
+            responseObj.status = constants.Error.status;
+            responseObj.body.message.tweet = 'Tweet already exists';
+            next(responseObj);
+          }
+          else {
+            // proceed, not duplicate
+            async.waterfall([
+              async.apply(createTweet, responseObj, req),
+              findEvent,
+              saveEvent,
+              createHIT,
+              findUsers,
+              updateUsers
+            ], function (err, result) {
+              // callbacks that return with err accumulate here
+              if (err !== null) {
+                next(err); // err is responseObj
+              }
+              // result accumulated here on success
+              else {
+                // notify by socket
+                request.post(SERVER + NOTIFY).form({'status': 'OK', 'code': 0});
+                res.status(constants.OK.status);
+                result.body.message = constants.OK.message;
+                res.send(result.body);
+              }
+            }); // end of waterfall
+          }
+        })
+        .catch(function(err) {
+          // error with checking tweet
+          next(err);
+        });
     }
   });
 
@@ -155,9 +179,9 @@ module.exports = function(router) {
         responseObj.body.message.tweet = err;
         callback(responseObj);
       });
-  };
+    };
 
-  function findEvent(responseObj, req, tweet, callback) {
+    function findEvent(responseObj, req, tweet, callback) {
     // use req body based information
     Event.findOne({'_id': req.body.eventID}).exec()
       // check if Event already exists or create a new one
@@ -186,22 +210,22 @@ module.exports = function(router) {
         // move to saving the event
         callback(null, responseObj, event);
       });
-  };
+    };
 
-  function saveEvent(responseObj, event, callback) {
+    function saveEvent(responseObj, event, callback) {
     // save the event created previously
     event.save()
-      .then(function(result) {
-        var event = result;
-        responseObj.body.data.event = event;
+    .then(function(result) {
+      var event = result;
+      responseObj.body.data.event = event;
         // move to creating HIT
         callback(null, responseObj, event);
       })
-      .catch(function(err) {
-        responseObj.status = constants.Error.status;
-        responseObj.body.message.event = err;
-        callback(responseObj);
-      });
+    .catch(function(err) {
+      responseObj.status = constants.Error.status;
+      responseObj.body.message.event = err;
+      callback(responseObj);
+    });
   };
 
   function createHIT(responseObj, event, callback) {
@@ -235,9 +259,9 @@ module.exports = function(router) {
         responseObj.body.message.HIT = err;
         callback(responseObj);
       });
-  };
+    };
 
-  function findUsers(responseObj, HITTuple, callback) {
+    function findUsers(responseObj, HITTuple, callback) {
     // Get all Users
     var query = User.find();
     query.exec()
@@ -256,9 +280,9 @@ module.exports = function(router) {
         responseObj.body.message.users = err;
         callback(responseObj);
       });
-  };
+    };
 
-  function updateUsers(responseObj, users, callback) {
+    function updateUsers(responseObj, users, callback) {
     // create an array of async format functions to be called to save users in parallel
     var functList = [];
     users.forEach(function(user) {
@@ -282,14 +306,51 @@ module.exports = function(router) {
     return function(callback) {
       // return a function that saves one user
       user.save()
-        .then(function(result) {
+      .then(function(result) {
           callback(null); // no error, save success
         })
-        .catch(function(err) {
+      .catch(function(err) {
           callback(err); // return error
         });
     };
   };
+
+  // promise for checking tweet text
+  function checkTweets(tweetText) {
+    return new Promise(function(resolve, reject) {
+      var responseObj = new constants['responseObject']();
+      // get all tweets from model
+      var query = Tweet.find();
+      // actually execute - mongoose
+      query.exec()
+        // success
+        .then(function(result) {
+          var tweets = result;
+          var exists = _.find(tweets, function(tweet) {
+            return tweet.text === tweetText;
+          });
+
+          resolve(exists);
+        })
+        // error
+        .catch(function(err) {
+          responseObj.status = constants.Error.status;
+          responseObj.body.message.tweets = err;
+          console.log(err);
+          reject(responseObj);
+        });
+    });
+  };
+
+
+  //OPTIONS for angular
+  eventsRoute.options(function(req, res) {
+    res.status(constants.OK.status);
+    res.json({
+      'message': constants.OK.message,
+      'data': []
+    });
+  });  
 
   /*
   Drop all events
@@ -307,11 +368,11 @@ module.exports = function(router) {
   
   //OPTIONS for angular
   eventsRoute.options(function(req, res) {
-      res.status(constants.OK.status);
-      res.json({
-        'message': constants.OK.message,
-        'data': []
-      });
+    res.status(constants.OK.status);
+    res.json({
+      'message': constants.OK.message,
+      'data': []
+    });
   });
 
   return router;
